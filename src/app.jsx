@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import React from "react";
 import StarRating from "./starRating";
@@ -22,6 +23,8 @@ export default function App() {
 
   // Effect to fetch movies based on query
   useEffect(() => {
+    if (selectedId) handleCloseMovie();
+
     if (query.length < 3) {
       setError("Start Searching Your movie");
       return;
@@ -105,10 +108,12 @@ export default function App() {
         <Box movies={movies}>
           {selectedId ? (
             <MovieDetails
+              setError={setError}
               selectedId={selectedId}
               onCloseMovie={handleCloseMovie}
               onAddWatch={handleAddWatch}
               watched={watched}
+              setSelectedId={setSelectedId}
             />
           ) : (
             <>
@@ -212,7 +217,13 @@ function MovieItem({ movie, setSelectedId }) {
 }
 
 // Component to display movie details
-function MovieDetails({ selectedId, onCloseMovie, onAddWatch, watched }) {
+function MovieDetails({
+  setError,
+  selectedId,
+  onCloseMovie,
+  onAddWatch,
+  watched,
+}) {
   const [movie, setMovie] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
@@ -235,9 +246,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatch, watched }) {
   }
 
   const {
-    imdbID: imdbID,
     Title: title,
-    Year: year,
     Poster: poster,
     Runtime: runtime,
     imdbRating,
@@ -247,6 +256,20 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatch, watched }) {
     Director: director,
     Genre: genre,
   } = movie;
+
+  // Effect for pressing ESC
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key !== "Escape") return;
+      onCloseMovie();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onCloseMovie]);
 
   useEffect(() => {
     (async function fetchMovies() {
