@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import React from "react";
 import StarRating from "./starRating";
+import { useMovie } from "./hooks/useMovie";
+import { useLocalStorageState } from "./hooks/useLocalStorageState";
 
 // API key for OMDB
 const KEY = "4bbfa765";
@@ -15,55 +17,11 @@ const average = (arr) => {
 export default function App() {
   // State variables
   const [query, setQuery] = useState("");
-  const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
+  const [watched, setWatched] = useLocalStorageState([], "watched");
 
-  // Effect to fetch movies based on query
-  useEffect(() => {
-    if (selectedId) handleCloseMovie();
-
-    if (query.length < 3) {
-      setError("Start Searching Your movie");
-      return;
-    }
-    const controller = new AbortController();
-
-    (async function fetchMovies() {
-      try {
-        setLoading(true);
-        setError("");
-        const res = await fetch(
-          `https://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
-          { signal: controller.signal }
-        );
-
-        if (!res.ok)
-          throw new Error(
-            "Failed to fetch movies,Check you internet connection !"
-          );
-
-        const data = await res.json();
-
-        if (data.Response === "False") throw new Error(data.Error);
-
-        setMovies(data.Search);
-        setError("");
-      } catch (err) {
-        if (err.name === "AbortError") return;
-        console.error(err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    })();
-
-    return function () {
-      controller.abort();
-    };
-  }, [query]);
+  // Hook to fetch movies based on query
+  const { movies, loading, error } = useMovie(query, handleCloseMovie);
 
   // Handle movie selection
   function handleSelectMovie(id) {
@@ -108,7 +66,6 @@ export default function App() {
         <Box movies={movies}>
           {selectedId ? (
             <MovieDetails
-              setError={setError}
               selectedId={selectedId}
               onCloseMovie={handleCloseMovie}
               onAddWatch={handleAddWatch}
@@ -217,13 +174,7 @@ function MovieItem({ movie, setSelectedId }) {
 }
 
 // Component to display movie details
-function MovieDetails({
-  setError,
-  selectedId,
-  onCloseMovie,
-  onAddWatch,
-  watched,
-}) {
+function MovieDetails({ selectedId, onCloseMovie, onAddWatch, watched }) {
   const [movie, setMovie] = useState([]);
   const [loading, setLoading] = useState(false);
   const [rating, setRating] = useState(0);
@@ -291,7 +242,6 @@ function MovieDetails({
         setMovie(data);
       } catch (err) {
         console.error(err.message);
-        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -355,6 +305,7 @@ function MovieDetails({
 }
 
 // Box component for watched movies with toggle functionality
+// eslint-disable-next-line no-unused-vars
 function WatchedBox({ children }) {
   const [isOpen, setIsOpen] = useState(true);
 
