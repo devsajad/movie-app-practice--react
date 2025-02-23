@@ -4,6 +4,7 @@ import React from "react";
 import StarRating from "./starRating";
 import { useMovie } from "./hooks/useMovie";
 import { useLocalStorageState } from "./hooks/useLocalStorageState";
+import { useKey } from "./hooks/useKey";
 
 // API key for OMDB
 const KEY = "4bbfa765";
@@ -209,18 +210,7 @@ function MovieDetails({ selectedId, onCloseMovie, onAddWatch, watched }) {
   } = movie;
 
   // Effect for pressing ESC
-  useEffect(() => {
-    function handleKeyDown(e) {
-      if (e.key !== "Escape") return;
-      onCloseMovie();
-    }
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [onCloseMovie]);
+  useKey("Escape", onCloseMovie);
 
   useEffect(() => {
     (async function fetchMovies() {
